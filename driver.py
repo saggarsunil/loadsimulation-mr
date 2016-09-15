@@ -11,7 +11,6 @@ from pexpect import pxssh
 #Default Values
 dbserver='localhost'  
 password='password123'
-user_password='abc123'
 username='guest'
 number_of_users=10    #Number of concurrent users
 file_list=[]          #List of files to read/write
@@ -101,7 +100,7 @@ def create_users():
 		logger.info('Creating user : '+'user'+str(i)+' ... ')
 		time.sleep(0.1)
 		client.exec_command('/usr/sbin/useradd user'+str(i))
-		client.exec_command('/bin/echo user'+str(i)+':'+user_password+' | chpasswd')
+		client.exec_command('/bin/echo user'+str(i)+':'+password+' | chpasswd')
 
 	logger.info("END: Created users for generating load")
 	client.close()
@@ -115,7 +114,6 @@ def copy_files():
 	sftp = client.open_sftp()
 
 	#Copy the files to the remote server
-	#TO DO: Idenity the files which needs to be copied to remote server
 	sftp.put("./iostat8","/tmp/iostat8")
 	client.exec_command('/bin/chmod 755 /tmp/iostat8') 
 
@@ -123,15 +121,14 @@ def copy_files():
 	sftp.put("./script.sh","/tmp/script.sh")
 	client.exec_command('/bin/chmod 755 /tmp/script.sh') 
 
-	sftp.put("./file1","/tmp/file1")
-	sftp.put("./file2","/tmp/file2")
-	sftp.put("./file3","/tmp/file3")
-	sftp.put("./file4","/tmp/file4")
-	sftp.put("./file5","/tmp/file5")
-	sftp.put("./file6","/tmp/file6")
-	sftp.put("./file7","/tmp/file7")
-
-	client.exec_command('/bin/chmod 755 /tmp/file*') 	
+	#sftp.put("./file1","/tmp/file1")
+	#sftp.put("./file2","/tmp/file2")
+	#sftp.put("./file3","/tmp/file3")
+	#sftp.put("./file4","/tmp/file4")
+	#sftp.put("./file5","/tmp/file5")
+	#sftp.put("./file6","/tmp/file6")
+	#sftp.put("./file7","/tmp/file7")
+	#client.exec_command('/bin/chmod 755 /tmp/file*') 	
 
 	logger.info("END: Copied files to the remote server")
 	sftp.close()
@@ -158,20 +155,16 @@ def worker():
 			random_files.append(file_list[index])
 		i=i+1
 
+	logger.debug('Random Files: '+str(random_files))
+
 	#Random time
 	rtime=random.randrange(min_btime,max_btime)
-	logger.debug('Random Files: '+str(random_files))
 
 	s=pxssh.pxssh()
 	s.login(dbserver,username,password)
 	s.sendline('/tmp/script.sh -t '+str(rtime)+' -f '+','.join(random_files))
 	s.prompt()
 	logger.debug(str(s.before))
-	# client = paramiko.SSHClient()
-	# client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	# logging.getLogger("paramiko").setLevel(logging.WARNING)
-	# client.connect(dbserver,22,username,password,look_for_keys=False)
-	# client.exec_command('/tmp/script.sh -t '+str(rtime)+' -f '+','.join(random_files))
 	logger.info('/tmp/script.sh -t '+str(rtime)+' -f '+','.join(random_files))
 	return
 
